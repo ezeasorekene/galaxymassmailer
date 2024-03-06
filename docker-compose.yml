@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  # Define web service
+  galaxyweb:
+    build: .
+    ports:
+      - "8100:80" #host-port:container-port
+    volumes:
+      - ./:/var/www/html
+      - ./php.ini:/usr/local/etc/php/php.ini
+      - ./extras/mysql:/var/lib/mysql
+      - ./public/uploads:/var/www/html/public/uploads
+    env_file: ./.env
+    environment:
+      APACHE_DOCUMENT_ROOT: /var/www/html/public
+    depends_on:
+      - galaxydb
+    restart: always
+
+  # Define mysql database service
+  galaxydb:
+    image: mysql:latest
+    ports:
+      - "8101:3306"
+    volumes:
+      - ./extras/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    restart: always
+
+  # Define phpmyadmin service
+  galaxyphpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8102:80"
+    environment:
+      PMA_HOST: galaxydb # Add ${DB_HOST} if you are connecting to an external host
+      # PMA_PORT: ${DB_PORT} # Uncomment this line if you are connecting to an external host on a different port
+      MYSQL_ROOT_PASSWORD: ${DB_USER}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    depends_on:
+      - galaxydb
+    restart: unless-stopped
